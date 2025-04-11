@@ -9,7 +9,18 @@ import express, {
 } from 'express';
 import cors from 'cors';
 import { PORT } from './config';
-import { SampleRouter } from './routers/sample.router';
+// import { SampleRouter } from './routers/sample.router';
+import authRoutes from '../src/routers/auth.router';
+import PropertyCategory from '../src/routers/propertyCategory.router';
+import Room from '../src/routers/room.router';
+import Property from '../src/routers/property.router';
+import PriceSeason from '../src/routers/priceSeason.router';
+import Customer from '../src/routers/customer.router';
+import Booking from '../src/routers/booking.router';
+import PropertyFacility from '../src/routers/propertyFacility.router';
+import PropertyDetail from '../src/routers/propertyDetail.router';
+
+import RoomFacility from '../src/routers/roomFacility.router';
 
 export default class App {
   private app: Express;
@@ -51,13 +62,23 @@ export default class App {
   }
 
   private routes(): void {
-    const sampleRouter = new SampleRouter();
+    // const sampleRouter = new SampleRouter();
 
-    this.app.get('/api', (req: Request, res: Response) => {
-      res.send(`Hello, Purwadhika Student API!`);
-    });
+    // this.app.get('/api', (req: Request, res: Response) => {
+    //   res.send(`Hello, Purwadhika Student API!`);
+    // });
 
-    this.app.use('/api/samples', sampleRouter.getRouter());
+    // this.app.use('/api/samples', sampleRouter.getRouter());
+    this.app.use('/auth', authRoutes);
+    this.app.use('/property-categories', PropertyCategory);
+    this.app.use('/property-lists', Property);
+    this.app.use('/rooms', Room);
+    this.app.use('/price-seasons', PriceSeason);
+    this.app.use('/customers', Customer);
+    this.app.use('/bookings', Booking);
+    this.app.use('/property-facility', PropertyFacility);
+    this.app.use('/room-facility', RoomFacility);
+    this.app.use('/property-detail', PropertyDetail);
   }
 
   public start(): void {

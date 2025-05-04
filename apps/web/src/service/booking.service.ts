@@ -10,7 +10,8 @@ import {
   LowestPriceRoom,
 } from '../../types/booking.type';
 
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const BASE_URL =
+  process.env.NEXT_PUBLIC_BASE_API_URL || 'http://localhost:8000';
 
 // Create a new booking
 export const createBooking = async (

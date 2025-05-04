@@ -3,7 +3,8 @@ import { getAuthToken } from '../../utils/auth.utils';
 import { RoomInfo } from '../../types/roomInfo.type';
 
 // Define the BASE_URL
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const BASE_URL =
+  process.env.NEXT_PUBLIC_BASE_API_URL || 'http://localhost:8000';
 
 export const getAllRoomInfo = async () => {
   try {

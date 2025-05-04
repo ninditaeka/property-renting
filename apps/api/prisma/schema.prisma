@@ -22,7 +22,6 @@ model User {
   email                   String      @db.VarChar(50) @unique
   password                String      @db.VarChar(100)
   role                    String?
-  photo                   String?
   google_id               String?     @unique
   createdAt               DateTime    @default(now())
   properties              Property[]
@@ -53,7 +52,7 @@ model Property {
   province                String      @db.VarChar(50)
   city                    String      @db.VarChar(50)
   address                 String      @db.VarChar(100)
-  description             String      @db.VarChar(100)
+  description             String      
   property_photo          String
   createdAt               DateTime    @default(now())
   updatedAt               DateTime    @default(now())
@@ -81,6 +80,7 @@ model PropertyBooking {
   phone_number            String
   total_price             Int
   quantity_person         Int
+  room_number_booking     Int
   check_in_date           DateTime?   @db.Timestamptz()
   check_out_date          DateTime?   @db.Timestamptz()
   createdAt               DateTime    @default(now())
@@ -145,7 +145,7 @@ model RoomFacility {
 model RoomType {
   id                      Int         @id @default(autoincrement())
   room_type_name          String      @db.VarChar(50)
-  description             String      @db.VarChar(200)     
+  description             String         
   room_type_price         Int 
   quantity_room           Int
   room_photo              String

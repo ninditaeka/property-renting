@@ -5,7 +5,6 @@ import express, {
   Request,
   Response,
   NextFunction,
-  Router,
 } from 'express';
 import cors from 'cors';
 import { PORT } from './config';
@@ -13,12 +12,18 @@ import { PORT } from './config';
 import authRoutes from '../src/routers/auth.router';
 import PropertyCategory from '../src/routers/propertyCategory.router';
 import Room from '../src/routers/room.router';
-import Property from '../src/routers/property.router';
+import Property from './routers/propertyList.router';
 import PriceSeason from '../src/routers/priceSeason.router';
 import Customer from '../src/routers/customer.router';
 import Booking from '../src/routers/booking.router';
 import PropertyFacility from '../src/routers/propertyFacility.router';
 import PropertyDetail from '../src/routers/propertyDetail.router';
+import RoomInfo from '../src/routers/roomInfo.router';
+import RoomManagement from '../src/routers/roomManagement.router';
+import PriceManagement from '../src/routers/priceManagement.router';
+import RoomDetail from '../src/routers/roomDetail.router';
+import PropertyListVeryDetail from '../src/routers/propertyListVeryDetail.router';
+import TenantGetInfo from './routers/tenant.router';
 
 import RoomFacility from '../src/routers/roomFacility.router';
 
@@ -79,6 +84,12 @@ export default class App {
     this.app.use('/property-facility', PropertyFacility);
     this.app.use('/room-facility', RoomFacility);
     this.app.use('/property-detail', PropertyDetail);
+    this.app.use('/room-info', RoomInfo);
+    this.app.use('/room-management', RoomManagement);
+    this.app.use('/price-management', PriceManagement);
+    this.app.use('/room-detail', RoomDetail);
+    this.app.use('/property-list-very-detail', PropertyListVeryDetail);
+    this.app.use('/tenants', TenantGetInfo);
   }
 
   public start(): void {

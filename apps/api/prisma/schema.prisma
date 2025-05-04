@@ -6,16 +6,195 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model Sample {
-  id        Int      @id @default(autoincrement())
-  name      String
-  code      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model User {
+  id                      Int         @id @default(autoincrement())
+  name                    String      @db.VarChar(100)
+  date_birth              DateTime?   @db.Timestamptz()
+  address                 String      @db.VarChar(50)
+  gender                  String      @db.VarChar(50)
+  phone                   String 
+  is_verify               Boolean     @default(false)
+  id_number               String
+  email                   String      @db.VarChar(50) @unique
+  password                String      @db.VarChar(100)
+  role                    String?
+  google_id               String?     @unique
+  createdAt               DateTime    @default(now())
+  properties              Property[]
+  tenant_details          TenantDetail[]
+  property_bookings       PropertyBooking[]
+  user_code               String     @unique  @default(uuid())
 
-  @@map("samples") // if you want to use snake_case format
+  @@map("users") 
+}
+
+model TenantDetail {
+  id                      Int         @id @default(autoincrement())
+  user                    User        @relation(fields: [user_id], references: [id])
+  user_id                 Int 
+  bank_name               String      @db.VarChar(50)
+  bank_account            String      @db.VarChar(50)
+  npwp                    String
+  createdAt               DateTime    @default(now())
+
+  @@map("tenant_details")
+}
+
+model Property {
+  id                      Int         @id @default(autoincrement())
+  user                    User        @relation(fields: [created_by], references: [id])
+  created_by                 Int 
+  property_name           String      @db.VarChar(50)
+  province                String      @db.VarChar(50)
+  city                    String      @db.VarChar(50)
+  address                 String      @db.VarChar(100)
+  description             String      
+  property_photo          String
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @default(now())
+  deleted                 Boolean     @default(false)
+  property_category       PropertyCategory    @relation(fields: [property_category_id], references: [id])
+  property_category_id    Int
+  property_bookings       PropertyBooking[]
+  property_price_histories PropertyPriceHistory[]
+  room_types              RoomType[]
+  property_having_facilities PropertyHavingFacility[]
+  property_code  String     @unique  @default(uuid())
+
+  @@map("properties")
+}
+
+model PropertyBooking { 
+  id                      Int         @id @default(autoincrement())
+  room_type               RoomType    @relation(fields: [room_type_id], references: [id])            
+  room_type_id            Int
+  property                Property    @relation(fields: [property_id], references: [id])
+  property_id             Int
+  user                    User        @relation(fields: [user_id], references: [id])
+  user_id                 Int 
+  full_name               String
+  phone_number            String
+  total_price             Int
+  quantity_person         Int
+  room_number_booking     Int
+  check_in_date           DateTime?   @db.Timestamptz()
+  check_out_date          DateTime?   @db.Timestamptz()
+  createdAt               DateTime    @default(now())
+
+  @@map("property_bookings")
+}
+
+model PropertyPriceHistory {
+  id                      Int         @id @default(autoincrement())
+  property                Property    @relation(fields: [property_id], references: [id])
+  property_id             Int
+  start_date              DateTime?   @db.Timestamptz()
+  end_date                DateTime?   @db.Timestamptz()
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @default(now())
+  property_price_history_code  String     @unique  @default(uuid())
+  room_numbers_id          Int
+  room_numbers             RoomNumber    @relation(fields: [room_numbers_id], references: [id])
+  name_of_sale            String
+  discount_type           String
+  discount_amount          Int
+  finall_price             Int
+  
+
+
+  @@map("property_price_histories")
+}
+
+model PropertyCategory {
+  id                      Int         @id @default(autoincrement())
+  property_category_name  String?     @db.VarChar(50) @unique
+  description             String ?     @db.VarChar(200)
+  property                Property[]
+  deleted                 Boolean     @default(false)
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @default(now())
+  created_by              Int?
+  property_category_code  String     @unique  @default(uuid())
+
+  @@map("property_categories")
+}
+
+model PropertyFacility {
+  id                      Int         @id @default(autoincrement())
+  property_facility_name  String      @db.VarChar(50)
+  createdAt               DateTime    @default(now())
+  property_having_facilities PropertyHavingFacility[]
+  
+
+  @@map("property_facilities")
+}
+
+model RoomFacility {
+  id                      Int         @id @default(autoincrement())
+  room_facility_name      String      @db.VarChar(50)
+  createdAt               DateTime    @default(now())
+  room_type_having_facilities RoomTypeHavingFacility[]
+
+  @@map("room_facilities")
+}
+
+model RoomType {
+  id                      Int         @id @default(autoincrement())
+  room_type_name          String      @db.VarChar(50)
+  description             String         
+  room_type_price         Int 
+  quantity_room           Int
+  room_photo              String
+  property                Property    @relation(fields: [property_id], references: [id])
+  property_id             Int
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @default(now())
+  deleted                 Boolean     @default(false)
+  room_type_having_facilities RoomTypeHavingFacility[]
+  room_type_code          String     @unique  @default(uuid())
+   room_number             RoomNumber[]
+   property_booking        PropertyBooking[]
+ 
+  
+
+  
+  @@map("room_types")
+}
+
+model PropertyHavingFacility {
+  id                      Int             @id @default(autoincrement())
+  property                Property        @relation(fields: [property_id], references: [id])
+  property_id             Int
+  property_facility       PropertyFacility @relation(fields: [property_facility_id], references: [id])
+  property_facility_id    Int
+  deleted                 Boolean     @default(false)
+
+  @@map("property_having_facilities")
+}
+
+model RoomTypeHavingFacility {
+  id                      Int              @id @default(autoincrement())
+  room_facility           RoomFacility     @relation(fields: [room_facility_id], references: [id])
+  room_facility_id        Int
+  room_type               RoomType         @relation(fields: [room_type_id], references: [id])
+  room_type_id            Int
+  deleted                 Boolean     @default(false)
+
+  @@map("room_type_having_facilities")
+}
+
+model RoomNumber {
+
+  id                          Int              @id @default(autoincrement())
+  room_number             String
+  room_type_id                Int
+  room_type                   RoomType    @relation(fields: [room_type_id], references: [id])
+  property_price_history      PropertyPriceHistory[]
+  deleted                     Boolean     @default(false)
+  room_number_code          String     @unique  @default(uuid())
+  @@map("room_numbers")
 }

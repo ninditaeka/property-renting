@@ -1,28 +1,25 @@
-'use client';
-import axios from 'axios';
-import {
-  RegistrationCustomer,
-  RegistrationTenant,
-  RegistrationRequest,
-  LoginCredentials,
-  User,
-  AuthResponse,
-} from '../../types/auth.type';
+// 'use client';
+// import axios from 'axios';
+// import {
+//   RegistrationCustomer,
+//   RegistrationTenant,
+//   RegistrationRequest,
+//   LoginCredentials,
+//   User,
+//   AuthResponse,
+// } from '../../types/auth.type';
 
-import Cookies from 'js-cookie';
+// import Cookies from 'js-cookie';
 
-const BASE_URL = 'http://localhost:8000';
+// const BASE_URL = 'http://localhost:8000';
 
 // export const authService = {
-//   async login(credentials: LoginCredentials) {
+//   async login(credentials: LoginCredentials): Promise<AuthResponse> {
 //     try {
-//       const response = await axios.post<{
-//         user: User;
-//         token: string;
-//       }>(`${BASE_URL}/auth/login`, credentials);
-
-//       // // Simpan token ke localStorage
-//       // localStorage.setItem('token', response.data.token);
+//       const response = await axios.post<AuthResponse>(
+//         `${BASE_URL}/auth/login`,
+//         credentials,
+//       );
 
 //       if (response.status === 200) {
 //         const { id, name, email, role } = response.data.user;
@@ -49,27 +46,249 @@ const BASE_URL = 'http://localhost:8000';
 //       }
 
 //       return response.data;
-//     } catch (error: any) {
-//       throw error.response?.data?.message || 'Failed Login ';
+//     } catch (error) {
+//       if (axios.isAxiosError(error) && error.response) {
+//         throw error.response.data?.message || 'Failed Login';
+//       }
+//       throw new Error('Failed Login');
 //     }
 //   },
 
-//   logout() {
-//     localStorage.removeItem('token');
+//   logout(): void {
+//     // Updated to use cookies instead of localStorage for consistency
+//     Cookies.remove('token');
+//     Cookies.remove('user');
 //   },
 
-//   // Fungsi untuk mengecek token
-//   getCurrentUser() {
-//     const token = localStorage.getItem('token');
-//     if (token) {
-//       // Implementasi pengecekan token dengan backend
-//       // Bisa menggunakan endpoint verifikasi token
+//   // Function to check current user
+//   getCurrentUser(): User | null {
+//     const userCookie = Cookies.get('user');
+//     if (userCookie) {
+//       try {
+//         return JSON.parse(userCookie) as User;
+//       } catch {
+//         return null;
+//       }
 //     }
 //     return null;
 //   },
 // };
 
-// Define types for the login credentials and user
+// export function getAuthenticatedUser() {
+//   const token = Cookies.get('token');
+//   const userCookie = Cookies.get('user');
+
+//   if (token && userCookie) {
+//     try {
+//       return JSON.parse(userCookie);
+//     } catch (error) {
+//       console.error('Error parsing user cookie');
+//       return null;
+//     }
+//   }
+
+//   return null;
+// }
+
+// export async function authStartRegister(data: RegistrationRequest) {
+//   const { email, role } = data;
+
+//   try {
+//     const response = await axios.post(`${BASE_URL}/auth/register`, {
+//       email,
+//       role,
+//     });
+//     return response.data;
+//   } catch (error) {
+//     if (axios.isAxiosError(error)) {
+//       console.error('Axios error:', {
+//         message: error.message,
+//         response: error.response?.data,
+//         status: error.response?.status,
+//       });
+//       throw new Error(error.response?.data?.message || 'Registration failed');
+//     } else {
+//       console.error('Unexpected error:', error);
+//       throw new Error('An unexpected error occurred');
+//     }
+//   }
+// }
+
+// export async function authCustomerRegister(data: RegistrationCustomer) {
+//   // Extract token from the current URL
+//   const urlParams = new URLSearchParams(window.location.search);
+//   const token = urlParams.get('token');
+
+//   // Check if token exists
+//   if (!token) {
+//     throw new Error('Verification token is missing from the URL');
+//   }
+
+//   const {
+//     email,
+//     name,
+//     date_birth,
+//     role,
+//     address,
+//     gender,
+//     phone,
+//     id_number,
+//     password,
+//     photo,
+//   } = data;
+
+//   try {
+//     const response = await axios.post(
+//       `${BASE_URL}/auth/register/customer`,
+//       {
+//         email,
+//         name,
+//         date_birth,
+//         role,
+//         address,
+//         gender,
+//         phone,
+//         id_number,
+//         password,
+//         photo,
+//       },
+//       {
+//         params: {
+//           token,
+//         },
+//       },
+//     );
+
+//     return response.data;
+//   } catch (error) {
+//     if (axios.isAxiosError(error)) {
+//       console.error('Axios error:', {
+//         message: error.message,
+//         response: error.response?.data,
+//         status: error.response?.status,
+//       });
+//       throw new Error(
+//         error.response?.data?.message || 'Registration for Customer is failed',
+//       );
+//     } else {
+//       console.error('Unexpected error:', error);
+//       throw new Error('An unexpected error occurred');
+//     }
+//   }
+// }
+
+// export async function authTenantRegister(data: RegistrationTenant) {
+//   const urlParams = new URLSearchParams(window.location.search);
+//   const token = urlParams.get('token');
+
+//   // Check if token exists
+//   if (!token) {
+//     throw new Error('Verification token is missing from the URL');
+//   }
+//   const {
+//     email,
+//     name,
+//     date_birth,
+//     role,
+//     address,
+//     gender,
+//     phone,
+//     id_number,
+//     password,
+//     bank_account,
+//     bank_name,
+//     npwp,
+//     photo,
+//   } = data;
+//   try {
+//     const response = await axios.post(
+//       `${BASE_URL}/auth/register/tenant`,
+//       {
+//         email,
+//         name,
+//         date_birth,
+//         role,
+//         address,
+//         gender,
+//         phone,
+//         id_number,
+//         password,
+//         bank_account,
+//         bank_name,
+//         npwp,
+//         photo,
+//       },
+//       {
+//         params: {
+//           token,
+//         },
+//       },
+//     );
+//     return response.data;
+//   } catch (error) {
+//     if (axios.isAxiosError(error)) {
+//       console.error('Axios error:', {
+//         message: error.message,
+//         response: error.response?.data,
+//         status: error.response?.status,
+//       });
+//       throw new Error(
+//         error.response?.data?.message || 'Registration for Tenant is failed',
+//       );
+//     } else {
+//       console.error('Unexpected error:', error);
+//       throw new Error('An unexpected error occurred');
+//     }
+//   }
+// }
+
+// export async function authVerifyToken(data: {
+//   email: string;
+//   role: string;
+//   token: string;
+// }): Promise<any> {
+//   const { email, role, token } = data;
+
+//   try {
+//     const response = await axios.post(`${BASE_URL}/auth/register`, {
+//       email,
+//       role,
+//       token,
+//     });
+//     return response.data;
+//   } catch (error) {
+//     if (axios.isAxiosError(error)) {
+//       console.error('Token Verification Axios error:', {
+//         message: error.message,
+//         response: error.response?.data,
+//         status: error.response?.status,
+//       });
+//       throw new Error(
+//         error.response?.data?.message || 'Token verification failed',
+//       );
+//     } else {
+//       console.error('Unexpected token verification error:', error);
+//       throw new Error('An unexpected error occurred during token verification');
+//     }
+//   }
+// }
+'use client';
+import axios from 'axios';
+import {
+  RegistrationCustomer,
+  RegistrationTenant,
+  RegistrationRequest,
+  LoginCredentials,
+  User,
+  AuthResponse,
+} from '../../types/auth.type';
+
+import Cookies from 'js-cookie';
+
+const BASE_URL = 'http://localhost:8000';
+
+// Helper function to safely access window object
+const isBrowser = typeof window !== 'undefined';
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
@@ -173,9 +392,13 @@ export async function authStartRegister(data: RegistrationRequest) {
 }
 
 export async function authCustomerRegister(data: RegistrationCustomer) {
-  // Extract token from the current URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token');
+  // Safely extract token from the URL
+  let token = null;
+
+  if (isBrowser) {
+    const urlParams = new URLSearchParams(window.location.search);
+    token = urlParams.get('token');
+  }
 
   // Check if token exists
   if (!token) {
@@ -236,13 +459,19 @@ export async function authCustomerRegister(data: RegistrationCustomer) {
 }
 
 export async function authTenantRegister(data: RegistrationTenant) {
-  const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token');
+  // Safely extract token from the URL
+  let token = null;
+
+  if (isBrowser) {
+    const urlParams = new URLSearchParams(window.location.search);
+    token = urlParams.get('token');
+  }
 
   // Check if token exists
   if (!token) {
     throw new Error('Verification token is missing from the URL');
   }
+
   const {
     email,
     name,
@@ -258,6 +487,7 @@ export async function authTenantRegister(data: RegistrationTenant) {
     npwp,
     photo,
   } = data;
+
   try {
     const response = await axios.post(
       `${BASE_URL}/auth/register/tenant`,

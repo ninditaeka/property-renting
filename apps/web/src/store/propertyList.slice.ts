@@ -8,6 +8,7 @@ import {
   getAvailableRoomTypes as getAvailableRoomTypesService,
   updateProperty as updatePropertyService,
   deletePropertyByCode as deletePropertyByCodeService,
+  getPropertyListBySearch as getPropertyListBySearchService,
 } from '../service/propertyList.service';
 
 import {
@@ -16,7 +17,6 @@ import {
   PropertyState,
 } from '../../types/propertyList.type';
 
-// Type for API errors
 interface ApiError {
   response?: {
     data?: {
@@ -128,6 +128,29 @@ export const getPropertiesByCity = createAsyncThunk(
       return rejectWithValue(
         typedError.response?.data?.message ||
           'Failed to fetch properties by city',
+      );
+    }
+  },
+);
+
+export const searchProperties = createAsyncThunk(
+  'property/searchProperties',
+  async (
+    searchParams: {
+      city: string;
+      checkIn: string;
+      checkOut: string;
+      rooms: number;
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await getPropertyListBySearchService(searchParams);
+      return response.data;
+    } catch (error: unknown) {
+      const typedError = error as ApiError;
+      return rejectWithValue(
+        typedError.response?.data?.message || 'Failed to search properties',
       );
     }
   },
@@ -282,6 +305,22 @@ const propertySlice = createSlice({
       .addCase(getPropertiesByCity.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      })
+
+      // Search properties
+      .addCase(searchProperties.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(searchProperties.fulfilled, (state, action) => {
+        state.loading = false;
+        state.properties = action.payload;
+        state.error = null;
+      })
+      .addCase(searchProperties.rejected, (state, action) => {
+        state.loading = false;
+        // console.log('error search properties: ', action.payload?.meta?.message);
+        state.error = (action.payload as any)?.meta?.message;
       })
 
       // Get available room types

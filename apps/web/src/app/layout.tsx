@@ -36,8 +36,11 @@ import { Providers } from '../components/Providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Property Rental App',
-  description: 'Find and list properties for rent',
+  title: 'RentEase',
+  description: 'Rent property easily and conveniently',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({

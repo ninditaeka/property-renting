@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Search, Plus, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,145 +29,86 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { ConfigurationRateDialog } from '@/components/Dashboard/ConfigureRateDialog';
-// Update the allPrice data structure to include the new fields
-const allPrice = [
-  {
-    id: '#01',
-    propertyName: 'Property A',
-    nameOfSale: 'Summer Sale',
-    roomType: 'Deluxe',
-    roomNumber: '101',
-    startDate: '15 March 2025',
-    endDate: '17 March 2025',
-    discountType: 'Percentage',
-    discountValue: '10%',
-    basePrice: 'Rp 1.500.000',
-    finalPrice: 'Rp 1.350.000',
-    status: 'active',
-  },
-  {
-    id: '#02',
-    propertyName: 'Property B',
-    nameOfSale: 'Summer Sale',
-    roomType: 'Superior',
-    roomNumber: '202',
-    startDate: '01 March 2025',
-    endDate: '03 March 2025',
-    discountType: 'Nominal',
-    discountValue: 'Rp 200.000',
-    basePrice: 'Rp 2.500.000',
-    finalPrice: 'Rp 2.300.000',
-    status: 'disactive',
-  },
-  {
-    id: '#03',
-    propertyName: 'Property A',
-    nameOfSale: 'Summer Sale',
-    roomType: 'Standart',
-    roomNumber: '105',
-    startDate: '21 March 2025',
-    endDate: '25 March 2025',
-    discountType: 'Percentage',
-    discountValue: '15%',
-    basePrice: 'Rp 700.000',
-    finalPrice: 'Rp 595.000',
-    status: 'active',
-  },
-  {
-    id: '#04',
-    propertyName: 'Property C',
-    nameOfSale: 'Summer Sale',
-    roomType: 'Superior',
-    roomNumber: '301',
-    startDate: '09 April 2025',
-    endDate: '12 April 2025',
-    discountType: 'Nominal',
-    discountValue: 'Rp 100.000',
-    basePrice: 'Rp 800.000',
-    finalPrice: 'Rp 700.000',
-    status: 'active',
-  },
-  {
-    id: '#05',
-    propertyName: 'Property B',
-    nameOfSale: 'Summer Sale',
-    roomType: 'Standart',
-    roomNumber: '205',
-    startDate: '20 April 2025',
-    endDate: '21 April 2025',
-    discountType: 'Percentage',
-    discountValue: '5%',
-    basePrice: 'Rp 750.000',
-    finalPrice: 'Rp 712.500',
-    status: 'active',
-  },
-  {
-    id: '#06',
-    propertyName: 'Property C',
-    nameOfSale: 'Summer Sale',
-    roomType: 'Two Rooms',
-    roomNumber: '310',
-    startDate: '15 May 2025',
-    endDate: '17 May 2025',
-    discountType: 'Nominal',
-    discountValue: 'Rp 90.000',
-    basePrice: 'Rp 890.000',
-    finalPrice: 'Rp 800.000',
-    status: 'active',
-  },
-  {
-    id: '#07',
-    propertyName: 'Property A',
-    nameOfSale: 'Summer Sale',
-    roomType: 'Deluxe',
-    roomNumber: '110',
-    startDate: '15 March 2025',
-    endDate: '17 March 2025',
-    discountType: 'Percentage',
-    discountValue: '20%',
-    basePrice: 'Rp 950.000',
-    finalPrice: 'Rp 760.000',
-    status: 'active',
-  },
-  {
-    id: '#08',
-    propertyName: 'Property B',
-    nameOfSale: 'Summer Sale',
-    roomType: 'Deluxe',
-    roomNumber: '210',
-    startDate: '15 March 2025',
-    endDate: '17 March 2025',
-    discountType: 'Nominal',
-    discountValue: 'Rp 50.000',
-    basePrice: 'Rp 650.000',
-    finalPrice: 'Rp 600.000',
-    status: 'active',
-  },
-];
+import { fetchPriceManagement } from '../../store/tenant.slice';
+import { AppDispatch, RootState } from '@/store';
+import { format, parseISO } from 'date-fns';
+import { cn } from '@/lib/utils';
+import {
+  PriceManagementItem,
+  PriceManagementQueryParams,
+} from '../../../types/tenant.type';
 
-// Update the SortField type to include the new fields
+// Interface for processed price data with additional fields
+interface ProcessedPriceItem extends Omit<PriceManagementItem, 'end_date'> {
+  status: 'Active' | 'Inactive';
+  displayStartDate: string;
+  displayEndDate: string;
+  end_date: string | null;
+}
+
+// Type for sort fields
 type SortField =
-  | 'id'
-  | 'propertyName'
-  | 'roomType'
-  | 'roomNumber'
-  | 'startDate'
-  | 'endDate'
-  | 'basePrice'
-  | 'finalPrice'
+  | 'price_id'
+  | 'property_name'
+  | 'room_type_name'
+  | 'room_number'
+  | 'start_date'
+  | 'end_date'
+  | 'base_price'
+  | 'final_price'
   | 'status'
-  | 'nameOfSale';
+  | 'name_of_sale';
 
 type SortDirection = 'asc' | 'desc';
 
 const ITEMS_PER_PAGE = 5;
 
 export default function PriceManagementPage() {
+  const dispatch = useDispatch<AppDispatch>();
+  const priceData = useSelector(
+    (state: RootState) => state.tenant.priceManagement.items,
+  );
+  const loading = useSelector(
+    (state: RootState) => state.tenant.priceManagement.isLoading,
+  );
+
+  // Get price season status to detect when a new price is added
+  const priceSeasonStatus = useSelector(
+    (state: RootState) => state.priceSeason.status,
+  );
+
   const [currentPage, setCurrentPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState<SortField>('id');
+  const [sortField, setSortField] = useState<SortField>('price_id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [filters, setFilters] = useState<PriceManagementQueryParams>({});
+  const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState<number>(
+    Date.now(),
+  );
+
+  // Fetch price management data on component mount and when dependencies change
+  useEffect(() => {
+    dispatch(fetchPriceManagement(filters));
+  }, [dispatch, filters, lastUpdateTimestamp]);
+
+  // Watch for price season status changes to refresh data
+  useEffect(() => {
+    if (priceSeasonStatus === 'succeeded') {
+      // Trigger data refresh by updating the timestamp
+      setLastUpdateTimestamp(Date.now());
+    }
+  }, [priceSeasonStatus]);
+
+  // Handle dialog close event
+  const handleDialogOpenChange = (open: boolean) => {
+    setDialogOpen(open);
+
+    // If dialog is closing, refresh the data
+    if (!open) {
+      setLastUpdateTimestamp(Date.now());
+    }
+  };
 
   // Handle sorting
   const handleSort = (field: SortField) => {
@@ -192,22 +134,100 @@ export default function PriceManagementPage() {
     );
   };
 
+  // Format date for display
+  const formatDate = (dateStr: string | null): string => {
+    if (!dateStr) {
+      return 'No End Date';
+    }
+
+    try {
+      // Check if the date string is in the format "DD Month YYYY"
+      if (/^\d{2} [A-Za-z]+ \d{4}$/.test(dateStr)) {
+        return dateStr;
+      }
+      // Otherwise, assume it's an ISO date and format it
+      return format(parseISO(dateStr), 'dd MMMM yyyy');
+    } catch (error) {
+      return dateStr; // Return the original string if parsing fails
+    }
+  };
+
+  // Determine if a price is active based on date
+  const isActivePrice = (
+    startDate: string,
+    endDate: string | null,
+  ): boolean => {
+    const today = new Date();
+    try {
+      let start: Date;
+
+      // Handle both date formats (from mock data and API)
+      if (/^\d{2} [A-Za-z]+ \d{4}$/.test(startDate)) {
+        // Parse "DD Month YYYY" format
+        start = new Date(startDate);
+      } else {
+        // Parse ISO format
+        start = parseISO(startDate);
+      }
+
+      // If endDate is null, consider it as far in the future
+      if (!endDate) {
+        return today >= start;
+      }
+
+      let end: Date;
+      if (/^\d{2} [A-Za-z]+ \d{4}$/.test(endDate)) {
+        end = new Date(endDate);
+      } else {
+        end = parseISO(endDate);
+      }
+
+      // Set times to start of day to avoid time-of-day comparison issues
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999); // End of day for end date
+
+      // A price is active if today is on or after the start date AND on or before the end date
+      return today >= start && today <= end;
+    } catch (error) {
+      console.error('Date parsing error:', error);
+      return false;
+    }
+  };
+
+  // Process and transform the data
+  const processedPriceData: ProcessedPriceItem[] = priceData.map(
+    (item: PriceManagementItem) => {
+      // Determine if the price is active based on dates
+      const active = isActivePrice(item.start_date, item.end_date);
+
+      return {
+        ...item,
+        status: active ? 'Active' : 'Inactive',
+        // Format dates for display if they're ISO dates
+        displayStartDate: formatDate(item.start_date),
+        displayEndDate: formatDate(item.end_date),
+      };
+    },
+  );
+
   // Filter and sort prices
-  const filteredAndSortedPrices = allPrice
-    .filter(
-      (price) =>
-        price.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        price.propertyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        price.roomType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        price.roomNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        price.finalPrice.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        price.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        price.nameOfSale.toLowerCase().includes(searchTerm.toLowerCase()),
-    )
+  const filteredAndSortedPrices = processedPriceData
+    .filter((price) => {
+      const searchTermLower = searchTerm.toLowerCase();
+      return (
+        price.price_id.toString().toLowerCase().includes(searchTermLower) ||
+        price.property_name.toLowerCase().includes(searchTermLower) ||
+        price.room_type_name.toLowerCase().includes(searchTermLower) ||
+        price.room_number.toLowerCase().includes(searchTermLower) ||
+        price.final_price.toString().toLowerCase().includes(searchTermLower) ||
+        price.status.toLowerCase().includes(searchTermLower) ||
+        price.name_of_sale.toLowerCase().includes(searchTermLower)
+      );
+    })
     .sort((a, b) => {
-      // Default string comparison
-      const valueA = a[sortField].toString().toLowerCase();
-      const valueB = b[sortField].toString().toLowerCase();
+      // Get values for comparison, safely handle different types
+      const valueA = String(a[sortField] || '').toLowerCase();
+      const valueB = String(b[sortField] || '').toLowerCase();
 
       return sortDirection === 'asc'
         ? valueA.localeCompare(valueB)
@@ -288,33 +308,39 @@ export default function PriceManagementPage() {
               <TableHeader>
                 <TableRow className="bg-muted/50">
                   <SortableHeader
-                    field="nameOfSale"
+                    field="name_of_sale"
                     label="Name of Sale"
                     className="w-[150px] whitespace-nowrap"
                   />
                   <SortableHeader
-                    field="propertyName"
+                    field="property_name"
                     label="Property Name"
                     className="w-[150px] whitespace-nowrap"
                   />
                   <SortableHeader
-                    field="roomType"
+                    field="room_type_name"
                     label="Room Type"
                     className="w-[150px] whitespace-nowrap"
                   />
                   <SortableHeader
-                    field="roomNumber"
+                    field="room_number"
                     label="Room Number"
                     className="w-[120px] whitespace-nowrap"
                   />
-                  <SortableHeader field="startDate" label="Start Date" />
-                  <SortableHeader field="endDate" label="End Date" />
-                  <SortableHeader field="finalPrice" label="Final Price" />
+                  <SortableHeader field="start_date" label="Start Date" />
+                  <SortableHeader field="end_date" label="End Date" />
+                  <SortableHeader field="final_price" label="Final Price" />
                   <SortableHeader field="status" label="Status" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {currentPrices.length === 0 ? (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-24 text-center">
+                      Loading price data...
+                    </TableCell>
+                  </TableRow>
+                ) : currentPrices.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={8}
@@ -325,15 +351,32 @@ export default function PriceManagementPage() {
                   </TableRow>
                 ) : (
                   currentPrices.map((price) => (
-                    <TableRow key={price.id}>
-                      <TableCell>{price.nameOfSale}</TableCell>
-                      <TableCell>{price.propertyName}</TableCell>
-                      <TableCell>{price.roomType}</TableCell>
-                      <TableCell>{price.roomNumber}</TableCell>
-                      <TableCell>{price.startDate}</TableCell>
-                      <TableCell>{price.endDate}</TableCell>
-                      <TableCell>{price.finalPrice}</TableCell>
-                      <TableCell>{price.status}</TableCell>
+                    <TableRow key={price.price_id}>
+                      <TableCell>{price.name_of_sale}</TableCell>
+                      <TableCell>{price.property_name}</TableCell>
+                      <TableCell>{price.room_type_name}</TableCell>
+                      <TableCell>{price.room_number}</TableCell>
+                      <TableCell>{price.displayStartDate}</TableCell>
+                      <TableCell>{price.displayEndDate}</TableCell>
+                      <TableCell>
+                        {new Intl.NumberFormat('id-ID', {
+                          style: 'currency',
+                          currency: 'IDR',
+                          minimumFractionDigits: 0,
+                        }).format(price.final_price)}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={cn(
+                            'px-2 py-1 rounded-full text-xs font-semibold',
+                            price.status === 'Active'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800',
+                          )}
+                        >
+                          {price.status}
+                        </span>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -381,7 +424,10 @@ export default function PriceManagementPage() {
       </CardContent>
 
       {/* Configuration Rate Dialog */}
-      <ConfigurationRateDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <ConfigurationRateDialog
+        open={dialogOpen}
+        onOpenChange={handleDialogOpenChange}
+      />
     </Card>
   );
 }

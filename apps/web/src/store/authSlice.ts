@@ -13,19 +13,6 @@ const initialState: AuthState = {
   error: null,
 };
 
-// Login Async Thunk
-// export const loginUser = createAsyncThunk(
-//   'auth/loginUser',
-//   async (credentials: LoginCredentials, { rejectWithValue }) => {
-//     try {
-//       const data = await authService.login(credentials);
-//       return data;
-//     } catch (error: any) {
-//       return rejectWithValue(error.message);
-//     }
-//   },
-// );
-
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async (credentials: LoginCredentials, { rejectWithValue }) => {

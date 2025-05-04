@@ -47,7 +47,7 @@ export default function CompleteCustomerProfilePage() {
       id_number: '',
       address: '',
       gender: undefined,
-      photo: undefined,
+      // photo: undefined,
     },
   });
 
@@ -64,7 +64,7 @@ export default function CompleteCustomerProfilePage() {
         gender: data.gender,
         role: 'customer',
         address: data.address,
-        photo: data.photo,
+        // photo: data.photo,
       });
 
       toast({
@@ -224,7 +224,7 @@ export default function CompleteCustomerProfilePage() {
               )}
             />
 
-            <FormField
+            {/* <FormField
               control={formCustomer.control}
               name="photo"
               render={({ field: { onChange, value, ...field } }) => (
@@ -254,7 +254,7 @@ export default function CompleteCustomerProfilePage() {
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
 
             <FormField
               control={formCustomer.control}

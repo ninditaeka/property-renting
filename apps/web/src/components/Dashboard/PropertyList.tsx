@@ -44,15 +44,13 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import {
-  getAllProperties,
-  deleteProperty,
-} from '../../store/propertyList.slice';
+import { deleteProperty } from '../../store/propertyList.slice';
+import { fetchProperties } from '../../store/tenant.slice';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAppDispatch, useAppSelector } from '../../store'; // Use your custom hooks
-import { Property } from '../../../types/propertyList.type';
+import { Property } from '../../../types/tenant.type';
 
 const ITEMS_PER_PAGE = 4;
 
@@ -61,24 +59,14 @@ const searchSchema = z.object({
   searchTerm: z.string().optional(),
 });
 
-// Type guard to check if a value is a string
-function isString(value: unknown): value is string {
-  return typeof value === 'string';
-}
-
-// Type guard to check if a value is a number
-function isNumber(value: unknown): value is number {
-  return typeof value === 'number';
-}
-
 export function PropertyListPage() {
   // Use your custom hook instead of useDispatch
   const dispatch = useAppDispatch();
 
   // Use your custom hook and update the selector path based on your store structure
-  const { properties, loading, error } = useAppSelector(
-    (state) => state.propertyList,
-  );
+  const properties = useAppSelector((state) => state.tenant.properties.items);
+  const loading = useAppSelector((state) => state.tenant.properties.isLoading);
+  const error = useAppSelector((state) => state.tenant.properties.error);
 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [sortField, setSortField] = useState<keyof Property>('id');
@@ -95,7 +83,7 @@ export function PropertyListPage() {
 
   useEffect(() => {
     // Use unwrap() to properly handle the Promise
-    dispatch(getAllProperties())
+    dispatch(fetchProperties())
       .unwrap()
       .catch((error) => console.error('Failed to fetch properties:', error));
   }, [dispatch]);
@@ -110,14 +98,50 @@ export function PropertyListPage() {
     }
   };
 
+  // Safe string conversion helper function
+  const safeToString = (value: any): string => {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    return String(value).toLowerCase();
+  };
+
+  // Helper function to safely get room type names
+  const getRoomTypeString = (roomTypes: any): string => {
+    if (!roomTypes) return '';
+
+    if (typeof roomTypes === 'string') {
+      return roomTypes.toLowerCase();
+    }
+
+    if (Array.isArray(roomTypes)) {
+      return roomTypes
+        .map((room) => {
+          if (typeof room === 'string') return room;
+          if (room && typeof room === 'object' && room.room_type_name) {
+            return room.room_type_name;
+          }
+          return '';
+        })
+        .join('')
+        .toLowerCase();
+    }
+
+    return '';
+  };
+
   // Filter and sort properties
   const filteredAndSortedProperties = properties
     .filter((property) => {
+      if (!searchTerm) return true;
+
       const searchTermLower = searchTerm.toLowerCase();
-      const propertyId = property.id?.toString() || '';
-      const propertyCode = property.property_code?.toString() || '';
-      const propertyName = property.property_name?.toLowerCase() || '';
-      const propertyCity = property.city?.toLowerCase() || '';
+
+      // Safely convert all potential searchable fields to strings
+      const propertyId = safeToString(property.id);
+      const propertyCode = safeToString(property.property_code);
+      const propertyName = safeToString(property.property_name);
+      const propertyCity = safeToString(property.city);
 
       return (
         propertyId.includes(searchTermLower) ||
@@ -133,40 +157,23 @@ export function PropertyListPage() {
         const idB = b.id ?? 0;
         return sortDirection === 'asc' ? idA - idB : idB - idA;
       } else {
-        // Handle both string and array types for sorting
+        // Handle string types for sorting with safe conversions
         let valueA = '';
         let valueB = '';
 
         if (sortField === 'property_name') {
-          valueA = (a.property_name || '').toLowerCase();
-          valueB = (b.property_name || '').toLowerCase();
+          valueA = safeToString(a.property_name);
+          valueB = safeToString(b.property_name);
         } else if (sortField === 'room_types') {
-          // Check if roomType is a string or an array
-          if (typeof a.room_types === 'string') {
-            valueA = a.room_types.toLowerCase();
-          } else {
-            // If it's an array, you could join it or use the first element
-            valueA = Array.isArray(a.room_types)
-              ? a.room_types
-                  .map((room) => (typeof room === 'string' ? room : ''))
-                  .join('')
-                  .toLowerCase()
-              : '';
-          }
-
-          if (typeof b.room_types === 'string') {
-            valueB = b.room_types.toLowerCase();
-          } else {
-            valueB = Array.isArray(b.room_types)
-              ? b.room_types
-                  .map((room) => (typeof room === 'string' ? room : ''))
-                  .join('')
-                  .toLowerCase()
-              : '';
-          }
+          valueA = getRoomTypeString(a.room_types);
+          valueB = getRoomTypeString(b.room_types);
         } else if (sortField === 'city') {
-          valueA = (a.city || '').toLowerCase();
-          valueB = (b.city || '').toLowerCase();
+          valueA = safeToString(a.city);
+          valueB = safeToString(b.city);
+        } else {
+          // Handle any other fields safely
+          valueA = safeToString(a[sortField]);
+          valueB = safeToString(b[sortField]);
         }
 
         return sortDirection === 'asc'
@@ -353,8 +360,8 @@ export function PropertyListPage() {
                             size="sm"
                             className="text-red-600 hover:text-red-800 hover:bg-red-50"
                             onClick={() =>
-                              handleDeleteClick(property.property_code)
-                            } // Use property_code for deletion
+                              handleDeleteClick(String(property.property_code))
+                            } // Ensure property_code is a string
                           >
                             Delete
                           </Button>

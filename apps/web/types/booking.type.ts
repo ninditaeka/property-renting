@@ -1,113 +1,206 @@
-// Define the booking type
-export interface Booking {
-  id: string;
-  name: string;
-  property: string;
-  checkIn: string;
-  checkOut: string;
+// // Updated booking.type.ts
+// export interface ApiResponse<T> {
+//   status: string;
+//   message?: string;
+//   data: T;
+//   error?: string;
+// }
+
+// export interface User {
+//   id: number;
+//   name: string;
+//   email: string;
+//   user_code: string;
+// }
+
+// export interface Booking {
+//   id: number;
+//   full_name: string;
+//   phone_number: string;
+//   property_id: number;
+//   room_type_id: number;
+//   user_id: number;
+//   room_number_booking: number;
+//   'check-in': string;
+//   'check-out': string;
+//   quantity_person: number;
+//   total_price: number;
+//   created_at?: string;
+//   updated_at?: string;
+// }
+
+// export interface BookingFormData {
+//   full_name: string;
+//   phone_number: string;
+//   property_id: number;
+//   room_type_id: number;
+//   room_number_booking: number;
+//   'check-in': string;
+//   'check-out': string;
+//   total_price: number;
+// }
+
+// export interface FormattedBooking {
+//   name: string;
+//   property_name: string;
+//   room_type_name: string;
+//   room_number_booking: number;
+//   'check-in': string;
+//   'check-out': string;
+// }
+
+// export interface RoomPricing {
+//   property_name: string;
+//   room_type_name: string;
+//   room_number: string;
+//   stay_date: string;
+//   price: number;
+//   price_type: 'Default Price' | 'Special Price';
+//   property_id?: number;
+// }
+
+// export interface AvailableRoom {
+//   room_number: string;
+//   room_type_id: number;
+//   room_type_name: string;
+//   property_id: number;
+// }
+
+// export interface LowestPriceRoom {
+//   room_number: string;
+//   price: number;
+//   room_type_id: number;
+//   room_type_name: string;
+//   property_name?: string;
+//   total_price?: string;
+//   property_id?: number;
+// }
+
+// export interface BookingState {
+//   selectedRoomType: {
+//     id: number;
+//     code: string;
+//     name: string;
+//   } | null;
+//   selectedDates: {
+//     'check-in': string | null;
+//     'check-out': string | null;
+//   };
+//   selectedRoom: AvailableRoom | null;
+//   guestDetails: {
+//     fullName: string;
+//     phoneNumber: string;
+//     quantityPerson: number;
+//   };
+// }
+// Updated booking.type.ts
+export interface ApiResponse<T> {
+  status: string;
+  message?: string;
+  data: T;
+  error?: string;
 }
 
-export type SortDirection = 'asc' | 'desc' | null;
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  user_code: string;
+}
 
+export interface Booking {
+  id: number;
+  full_name: string;
+  phone_number: string;
+  property_id: number;
+  room_type_id: number;
+  user_id: number;
+  room_number_booking: number;
+  'check-in': string;
+  'check-out': string;
+  quantity_person: number;
+  total_price: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface BookingFormData {
+  full_name: string;
+  phone_number: string;
+  property_id: number;
+  room_type_id: number;
+  room_number_booking: number;
+  'check-in': string;
+  'check-out': string;
+  total_price: number;
+}
+
+export interface FormattedBooking {
+  name: string;
+  property_name: string;
+  room_type_name: string;
+  room_number_booking: number;
+  'check-in': string;
+  'check-out': string;
+}
+
+export interface RoomPricing {
+  property_name: string;
+  room_type_name: string;
+  room_number: string;
+  stay_date: string;
+  price: number;
+  price_type: 'Default Price' | 'Special Price';
+  property_id?: number;
+}
+
+export interface AvailableRoom {
+  room_number: string;
+  room_type_id: number;
+  room_type_name: string;
+  property_id: number;
+}
+
+export interface LowestPriceRoom {
+  room_number: string;
+  price: number;
+  room_type_id: number;
+  room_type_name: string;
+  property_name?: string;
+  total_price?: string;
+  property_id?: number;
+}
+
+export interface BookingState {
+  selectedRoomType: {
+    id: number;
+    code: string;
+    name: string;
+  } | null;
+  selectedDates: {
+    'check-in': string | null;
+    'check-out': string | null;
+  };
+  selectedRoom: AvailableRoom | null;
+  guestDetails: {
+    fullName: string;
+    phoneNumber: string;
+    quantityPerson: number;
+  };
+}
+
+// Added types for sorting and filtering functionality
 export interface SortState {
   column: keyof Booking | null;
-  direction: SortDirection;
+  direction: 'asc' | 'desc' | null;
 }
 
 export interface FilterState {
-  name: string | null;
-  property: string | null;
+  name?: string;
+  property?: string;
 }
 
 export interface DateRangeState {
   from: Date | null;
   to: Date | null;
 }
-
-// Sample booking data
-export const allBookings: Booking[] = [
-  {
-    id: '#01',
-    name: 'Nikitha',
-    property: 'Hotel Gala',
-    checkIn: '14 March 2025',
-    checkOut: '15 March 2025',
-  },
-  {
-    id: '#02',
-    name: 'Ani',
-    property: 'Resort Spa',
-    checkIn: '16 March 2025',
-    checkOut: '18 March 2025',
-  },
-  {
-    id: '#03',
-    name: 'Nikitha',
-    property: 'Beach House',
-    checkIn: '20 March 2025',
-    checkOut: '25 March 2025',
-  },
-  {
-    id: '#04',
-    name: 'Nikitha',
-    property: 'Mountain Cabin',
-    checkIn: '01 April 2025',
-    checkOut: '05 April 2025',
-  },
-  {
-    id: '#05',
-    name: 'John',
-    property: 'City Apartment',
-    checkIn: '10 April 2025',
-    checkOut: '15 April 2025',
-  },
-  {
-    id: '#06',
-    name: 'Sarah',
-    property: 'Lakeside Cottage',
-    checkIn: '18 April 2025',
-    checkOut: '22 April 2025',
-  },
-  {
-    id: '#07',
-    name: 'Michael',
-    property: 'Downtown Loft',
-    checkIn: '25 April 2025',
-    checkOut: '30 April 2025',
-  },
-  {
-    id: '#08',
-    name: 'Emma',
-    property: 'Seaside Villa',
-    checkIn: '05 May 2025',
-    checkOut: '12 May 2025',
-  },
-  {
-    id: '#09',
-    name: 'David',
-    property: 'Mountain Lodge',
-    checkIn: '15 May 2025',
-    checkOut: '20 May 2025',
-  },
-  {
-    id: '#10',
-    name: 'Sophie',
-    property: 'Urban Condo',
-    checkIn: '25 May 2025',
-    checkOut: '30 May 2025',
-  },
-  {
-    id: '#11',
-    name: 'James',
-    property: 'Beachfront Villa',
-    checkIn: '05 June 2025',
-    checkOut: '12 June 2025',
-  },
-  {
-    id: '#12',
-    name: 'Olivia',
-    property: 'Country House',
-    checkIn: '15 June 2025',
-    checkOut: '22 June 2025',
-  },
-];

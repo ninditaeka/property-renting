@@ -1,14 +1,16 @@
-// src/types/property.types.ts
 import { PropertyFacility } from './propertyFacility.type';
 
 export interface PropertyHavingFacility {
   id: number;
   property_id: number;
   property_facility_id: number;
-  property_facility: PropertyFacility;
-  deleted?: boolean;
+  deleted: boolean;
+  property_facility: {
+    id: number;
+    property_facility_name: string;
+    createdAt?: string;
+  };
 }
-
 export interface RoomFacility {
   id: number;
   room_facility_name: string;
@@ -100,10 +102,29 @@ export interface CreatePropertyRequest {
   city: string;
   address: string;
   description: string;
-  property_photo: string;
+  property_photo?: string;
+  property_category_id: number;
+  // property_facility_ids: number[];
+  property_having_facilities?: PropertyFacility[];
+  room_types?: {
+    room_type_name: string;
+    description: string;
+    room_type_price: number;
+    quantity_room: number;
+    room_photo: string;
+  }[];
+}
+
+export interface CreatePropertyRequestFirst {
+  property_name: string;
+  province: string;
+  city: string;
+  address: string;
+  description: string;
+  property_photo?: string;
   property_category_id: number;
   property_facility_ids: number[];
-  room_types: {
+  room_types?: {
     room_type_name: string;
     description: string;
     room_type_price: number;
@@ -168,6 +189,11 @@ export interface Room {
   description: string;
   price: string;
   quantity: string;
-  photo?: File;
+  room_photo?: string;
   room_type_code: string;
+  property_name?: string;
+  room_type?: string;
+  room_number?: string;
+  facility?: string;
+  property_id: number;
 }

@@ -44,7 +44,7 @@ export default function CompleteTenantProfilePage() {
       id_number: '',
       address: '',
       gender: undefined,
-      photo: undefined,
+      // photo: undefined,
       bank_account: '',
       bank_name: '',
       npwp: '',
@@ -64,7 +64,7 @@ export default function CompleteTenantProfilePage() {
         gender: data.gender,
         role: 'tenant',
         address: data.address,
-        photo: data.photo,
+        // photo: data.photo,
         bank_account: data.bank_account,
         bank_name: data.bank_name,
         npwp: data.npwp,
@@ -243,7 +243,7 @@ export default function CompleteTenantProfilePage() {
                 )}
               />
 
-              <FormField
+              {/* <FormField
                 control={formTenant.control}
                 name="photo"
                 render={({ field: { onChange, value, ...field } }) => (
@@ -273,7 +273,7 @@ export default function CompleteTenantProfilePage() {
                     <FormMessage />
                   </FormItem>
                 )}
-              />
+              /> */}
 
               <FormField
                 control={formTenant.control}

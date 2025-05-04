@@ -1,4 +1,5 @@
 import { RoomType } from './propertyList.type';
+
 export interface PropertyResponse<T> {
   status: string;
   message: string;
@@ -32,7 +33,8 @@ export interface PropertyFacility {
 export interface Property {
   id: string;
   property_code: string;
-  name: string;
+  property_name: string;
+  property_photo: string;
   description?: string;
   address: string;
   city: string;
@@ -54,4 +56,35 @@ export interface PropertyWithRoomTypes extends Property {
 
 export interface PropertyWithFacilities extends Property {
   facilities: PropertyFacility[];
+}
+
+export interface PropertyWithDetails extends Property {
+  room_types?: RoomType[];
+  facilities?: PropertyFacility[];
+}
+
+// New interface for room details with availability information
+export interface RoomDetail {
+  room_type_id: string;
+  room_type_name: string;
+  description: string;
+  room_type_price: number;
+  quantity_room: number;
+  room_photo: string;
+  property_id: string;
+  room_facilities: string;
+}
+
+// New interface for property availability details
+export interface PropertyWithAvailability {
+  property_details: {
+    id: string;
+    property_name: string;
+    property_facilities: string;
+    total_rooms: number;
+    booked_rooms: number;
+    availability_status: 'available' | 'fullbooked' | 'unavailable';
+    lowest_price: number | null;
+  };
+  room_details: RoomDetail[];
 }

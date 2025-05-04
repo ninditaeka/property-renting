@@ -17,13 +17,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { RootState, useAppDispatch, useAppSelector } from '@/store';
-import { AuthState, logoutUser } from '@/store/authSlice';
+import { AuthState } from '../../types/auth.type';
+import { logoutUser } from '@/store/authSlice';
 
 export const Header = () => {
   const dispatch = useAppDispatch();
-  const { loading, error, isAuthenticated, user } = useAppSelector<RootState>(
-    (state) => state.auth,
-  ) as AuthState;
+
+  // Fix: Access the auth property from state which contains the AuthState
+  const { loading, error, isAuthenticated, user } = useAppSelector(
+    (state: RootState) => state.auth,
+  );
 
   const handleLogOut = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +76,7 @@ export const Header = () => {
                 <DropdownMenuGroup>
                   <DropdownMenuItem>
                     <Link
-                      href={user?.role == 'customer' ? '/customer' : '/tenant'}
+                      href={user?.role === 'customer' ? '/customer' : '/tenant'}
                       className="text-gray-700 hover:text-sky-500"
                     >
                       Dashboard

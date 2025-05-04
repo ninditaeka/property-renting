@@ -39,13 +39,16 @@ import {
   PreparedRoom,
   CreatePropertyRequest,
   Room,
+  CreatePropertyRequestFirst,
 } from '../../../types/propertyList.type';
 import { RootState, AppDispatch } from '@/store';
 
-// Define the validation schema
 const roomSchema = z.object({
   name: z.string().min(1, 'Room type name is required'),
-  description: z.string().optional(),
+  description: z
+    .string()
+    .min(1, 'Room description is required')
+    .max(200, 'Room description should not exceed 200 characters'),
   price: z
     .string()
     .min(1, 'Room price is required')
@@ -69,7 +72,10 @@ const propertySchema = z.object({
   province: z.string().min(1, 'Province is required'),
   photo: z.instanceof(File).optional(), // Property photo
   facilities: z.array(z.string()).optional(),
-  description: z.string().optional(),
+  description: z
+    .string()
+    .min(10, 'Description should be at least 10 characters')
+    .max(500, 'Description should not exceed 500 characters'),
   rooms: z.array(roomSchema).optional(),
 });
 
@@ -130,6 +136,9 @@ export default function RegisterPropertyFormPage() {
     description: '',
     price: '',
     quantity: '',
+    room_type_code: '', // Add this property
+    room_photo: '',
+    property_id: 0,
   });
 
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] =
@@ -147,11 +156,13 @@ export default function RegisterPropertyFormPage() {
     handleSubmit,
     setValue,
     formState: { errors },
+    getValues,
   } = useForm({
     resolver: zodResolver(propertySchema),
     defaultValues: {
       facilities: [],
       rooms: [],
+      description: '', // Initialize with empty string
     },
   });
 
@@ -207,8 +218,29 @@ export default function RegisterPropertyFormPage() {
   };
 
   const handleAddRoom = () => {
+    // First, validate that description is not empty
+    if (!newRoom.description || newRoom.description.trim() === '') {
+      toast({
+        title: 'Validation Error',
+        description: 'Room description is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate room description length
+    if (newRoom.description && newRoom.description.length > 200) {
+      toast({
+        title: 'Validation Error',
+        description: 'Room description should not exceed 200 characters',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (
       newRoom.name.trim() &&
+      newRoom.description.trim() && // Add explicit check for description
       parseFloat(newRoom.price) >= 0 &&
       parseInt(newRoom.quantity) >= 1
     ) {
@@ -218,19 +250,21 @@ export default function RegisterPropertyFormPage() {
         description: '',
         price: '',
         quantity: '',
+        room_type_code: '',
+        room_photo: '',
+        property_id: 0,
       });
-      setRoomImageBase64(null); // Reset room image preview
+      setRoomImageBase64(null);
       setIsRoomDialogOpen(false);
     } else {
       toast({
         title: 'Validation Error',
         description:
-          'Please check all required fields. Price must be non-negative and quantity must be at least 1.',
+          'Please check all required fields. Room name and description are required. Price must be non-negative and quantity must be at least 1.',
         variant: 'destructive',
       });
     }
   };
-
   const confirmDelete = (
     type: 'facility' | 'room',
     index: number,
@@ -261,55 +295,69 @@ export default function RegisterPropertyFormPage() {
 
   const onSubmit = async (data: z.infer<typeof propertySchema>) => {
     try {
+      // Check if there are no rooms added
+      if (rooms.length === 0) {
+        toast({
+          title: 'Validation Error',
+          description:
+            'You must add at least one room before registering a property.',
+          variant: 'destructive',
+        });
+        return; // Prevent form submission
+      }
+
+      // Check if any rooms don't have descriptions
+      const roomWithoutDescription = rooms.find(
+        (room) => !room.description || room.description.trim() === '',
+      );
+
+      if (roomWithoutDescription) {
+        toast({
+          title: 'Validation Error',
+          description: `Room "${roomWithoutDescription.name}" is missing a description. All rooms must have descriptions.`,
+          variant: 'destructive',
+        });
+        return; // Prevent form submission
+      }
+
       // Add facilities to form data
       data.facilities = selectedFacilityIds;
 
       // Add rooms to form data
       data.rooms = rooms;
 
-      // Prepare room data with base64 encoded photos
-      const preparedRooms: PreparedRoom[] = await Promise.all(
-        rooms.map(async (room) => {
-          const preparedRoom: PreparedRoom = {
-            name: room.name,
-            description: room.description,
-            price: room.price,
-            quantity: room.quantity,
-          };
+      const preparedRooms: PreparedRoom[] = rooms.map((room) => {
+        const preparedRoom: PreparedRoom = {
+          name: room.name,
+          description: room.description,
+          price: room.price,
+          quantity: room.quantity,
+          room_type_code: room.room_type_code,
+          property_id: room.property_id,
+          photoBase64: room.room_photo || '', // Use the room_photo directly
+        };
 
-          if (room.photo) {
-            try {
-              const base64 = await convertToBase64(room.photo);
-              const fileImage = base64.split(',')[1];
-              preparedRoom.photoBase64 = fileImage;
-            } catch (error) {
-              console.error('Error converting room photo to base64:', error);
-            }
-          }
-          return preparedRoom;
-        }),
-      );
+        return preparedRoom;
+      });
 
-      const propertyData: CreatePropertyRequest = {
+      const propertyData: CreatePropertyRequestFirst = {
         property_name: data.name,
         province: data.province,
         city: data.city,
         address: data.address,
-        description: data.description || '',
+        description: data.description,
         property_photo: propertyImageBase64 || '',
         property_category_id: Number(data.category),
+        // property_having_facilities: selectedFacilityIds.map((id) => Number(id)),
         property_facility_ids: selectedFacilityIds.map((id) => Number(id)),
-        room_types: await Promise.all(
-          preparedRooms.map(async (room) => ({
-            room_type_name: room.name,
-            description: room.description ?? '',
-            room_type_price: Number(room.price),
-            quantity_room: Number(room.quantity),
-            room_photo: room.photo ? await convertToBase64(room.photo) : '',
-          })),
-        ),
+        room_types: preparedRooms.map((room) => ({
+          room_type_name: room.name,
+          description: room.description ?? '', // Ensure description exists
+          room_type_price: Number(room.price),
+          quantity_room: Number(room.quantity),
+          room_photo: room.photoBase64 || '',
+        })),
       };
-
       // Dispatch the createProperty action
       dispatch(createProperty(propertyData));
     } catch (error) {
@@ -339,9 +387,22 @@ export default function RegisterPropertyFormPage() {
       }
 
       try {
+        // First convert the file to base64
         const base64 = await convertToBase64(file);
+
         const fileImage = base64.split(',')[1];
-        setPropertyImageBase64(fileImage);
+
+        const encodedImage = encodeURIComponent(fileImage);
+        setPropertyImageBase64(encodedImage);
+
+        const decodePropertyImage = () => {
+          if (propertyImageBase64) {
+            return decodeURIComponent(propertyImageBase64);
+          }
+          return '';
+        };
+
+        // Set the file in your form
         setValue('photo', file);
       } catch (error) {
         console.error('Error converting file to base64:', error);
@@ -373,8 +434,21 @@ export default function RegisterPropertyFormPage() {
       try {
         const base64 = await convertToBase64(file);
         const fileImage = base64.split(',')[1];
-        setRoomImageBase64(fileImage);
-        setNewRoom({ ...newRoom, photo: file });
+
+        // Encode the base64 string for safe URI usage
+        const encodedImage = encodeURIComponent(fileImage);
+        setRoomImageBase64(encodedImage);
+
+        // When setting the room photo, also use the encoded version
+        setNewRoom({ ...newRoom, room_photo: encodedImage });
+
+        // Create a decode function to use when retrieving the image
+        const decodeRoomImage = () => {
+          if (roomImageBase64) {
+            return decodeURIComponent(roomImageBase64);
+          }
+          return '';
+        };
       } catch (error) {
         console.error('Error converting file to base64:', error);
         toast({
@@ -574,25 +648,38 @@ export default function RegisterPropertyFormPage() {
                   </div>
                 )}
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">
+                  Description <span className="text-red-500">*</span>
+                </Label>
                 <Controller
                   name="description"
                   control={control}
                   render={({ field }) => (
-                    <Textarea
-                      id="description"
-                      className="bg-white"
-                      {...field}
-                    />
+                    <>
+                      <Textarea
+                        id="description"
+                        placeholder="Enter property description (required)"
+                        className="bg-white"
+                        {...field}
+                        required
+                      />
+                      <div className="text-xs text-gray-500 text-right mt-1">
+                        {field.value?.length || 0}/500 characters
+                      </div>
+                    </>
                   )}
                 />
+                {errors.description && (
+                  <p className="text-red-500">{errors.description.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <Label>Room Type</Label>
+                  <Label>
+                    Room Type <span className="text-red-500">*</span>
+                  </Label>
                   <Button
                     type="button"
                     variant="secondary"
@@ -607,23 +694,31 @@ export default function RegisterPropertyFormPage() {
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2 items-center mt-2">
-                  {rooms.map((room, index) => (
-                    <Badge
-                      key={index}
-                      variant="secondary"
-                      className="bg-gray-200 text-black flex items-center gap-1 pr-1"
-                    >
-                      {room.name} (IDR {room.price})
-                      <button
-                        type="button"
-                        onClick={() => confirmDelete('room', index, room.name)}
-                        className="ml-1 rounded-full bg-gray-300 hover:bg-gray-400 p-0.5 flex items-center justify-center"
-                        aria-label={`Remove ${room.name}`}
+                  {rooms.length === 0 ? (
+                    <p className="text-red-500 text-sm">
+                      You must add at least one room before registering
+                    </p>
+                  ) : (
+                    rooms.map((room, index) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="bg-gray-200 text-black flex items-center gap-1 pr-1"
                       >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
+                        {room.name} (IDR {room.price})
+                        <button
+                          type="button"
+                          onClick={() =>
+                            confirmDelete('room', index, room.name)
+                          }
+                          className="ml-1 rounded-full bg-gray-300 hover:bg-gray-400 p-0.5 flex items-center justify-center"
+                          aria-label={`Remove ${room.name}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -696,16 +791,22 @@ export default function RegisterPropertyFormPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="roomDescription">Description</Label>
+                <Label htmlFor="roomDescription">
+                  Description <span className="text-red-500">*</span>
+                </Label>
                 <Textarea
                   id="roomDescription"
-                  placeholder="Enter room description"
+                  placeholder="Enter room description (required)"
                   value={newRoom.description}
                   onChange={(e) =>
                     setNewRoom({ ...newRoom, description: e.target.value })
                   }
                   className="min-h-[80px]"
+                  required
                 />
+                <div className="text-xs text-gray-500 text-right">
+                  {newRoom.description?.length || 0}/200 characters
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="roomPrice">Room Type Price (IDR)</Label>

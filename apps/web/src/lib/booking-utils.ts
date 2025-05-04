@@ -11,89 +11,109 @@ export const parseDate = (dateString: string) => {
   return parse(dateString, 'd MMMM yyyy', new Date());
 };
 
-// Filter and sort bookings
+// Helper to safely convert values to string for comparison
+const safeToString = (value: any): string => {
+  if (value === null || value === undefined) return '';
+  return String(value).toLowerCase();
+};
+
 export const filterAndSortBookings = (
-  bookings: Booking[],
+  bookings: Booking[] | undefined,
   searchTerm: string,
   filters: FilterState,
   dateRange: DateRangeState,
   sortState: SortState,
 ): Booking[] => {
-  return bookings
-    .filter((booking) => {
-      // Search filter
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        return (
-          booking.id.toLowerCase().includes(searchLower) ||
-          booking.name.toLowerCase().includes(searchLower) ||
-          booking.property.toLowerCase().includes(searchLower) ||
-          booking.checkIn.toLowerCase().includes(searchLower) ||
-          booking.checkOut.toLowerCase().includes(searchLower)
-        );
-      }
-      return true;
-    })
-    .filter((booking) => {
-      // Name filter
-      if (filters.name) {
-        return booking.name === filters.name;
-      }
-      return true;
-    })
-    .filter((booking) => {
-      // Property filter
-      if (filters.property) {
-        return booking.property === filters.property;
-      }
-      return true;
-    })
-    .filter((booking) => {
-      // Date range filter
-      if (dateRange.from && dateRange.to) {
-        const checkInDate = parseDate(booking.checkIn);
-        const checkOutDate = parseDate(booking.checkOut);
+  // Return an empty array if bookings is undefined or null
+  if (!bookings) return [];
 
-        // Check if either check-in or check-out date falls within the selected range
-        return (
-          isWithinInterval(checkInDate, {
-            start: dateRange.from,
-            end: dateRange.to,
-          }) ||
-          isWithinInterval(checkOutDate, {
-            start: dateRange.from,
-            end: dateRange.to,
-          }) ||
-          (checkInDate <= dateRange.from && checkOutDate >= dateRange.to)
-        );
-      }
-      return true;
-    })
-    .sort((a, b) => {
-      // Sorting
-      if (sortState.column && sortState.direction) {
-        const column = sortState.column;
-        const direction = sortState.direction;
-
-        if (column === 'checkIn' || column === 'checkOut') {
-          const dateA = parseDate(a[column]);
-          const dateB = parseDate(b[column]);
-          return direction === 'asc'
-            ? dateA.getTime() - dateB.getTime()
-            : dateB.getTime() - dateA.getTime();
+  return (
+    bookings
+      .filter((booking) => {
+        // Search filter
+        if (searchTerm) {
+          const searchLower = searchTerm.toLowerCase();
+          return (
+            safeToString(booking.id).includes(searchLower) ||
+            safeToString(booking.full_name).includes(searchLower) ||
+            safeToString(booking.property_id).includes(searchLower) ||
+            safeToString(booking['check-in']).includes(searchLower) ||
+            safeToString(booking['check-out']).includes(searchLower)
+          );
         }
-
-        const valueA = a[column].toLowerCase();
-        const valueB = b[column].toLowerCase();
-
-        if (direction === 'asc') {
-          return valueA.localeCompare(valueB);
-        } else {
-          return valueB.localeCompare(valueA);
+        return true;
+      })
+      // ... rest of your function remains the same
+      .filter((booking) => {
+        // Name filter
+        if (filters.name) {
+          return booking.full_name === filters.name;
         }
-      }
-      return 0;
-    });
+        return true;
+      })
+      .filter((booking) => {
+        // Property filter
+        if (filters.property) {
+          return String(booking.property_id) === filters.property;
+        }
+        return true;
+      })
+      .filter((booking) => {
+        // Date range filter
+        if (dateRange.from && dateRange.to) {
+          const checkInDate = parseDate(booking['check-in']);
+          const checkOutDate = parseDate(booking['check-out']);
+
+          // Check if either check-in or check-out date falls within the selected range
+          return (
+            isWithinInterval(checkInDate, {
+              start: dateRange.from,
+              end: dateRange.to,
+            }) ||
+            isWithinInterval(checkOutDate, {
+              start: dateRange.from,
+              end: dateRange.to,
+            }) ||
+            (checkInDate <= dateRange.from && checkOutDate >= dateRange.to)
+          );
+        }
+        return true;
+      })
+
+      .sort((a, b) => {
+        // Sorting
+        if (sortState.column && sortState.direction) {
+          const column = sortState.column;
+          const direction = sortState.direction;
+
+          if (column === 'check-in' || column === 'check-out') {
+            const dateA = parseDate(a[column]);
+            const dateB = parseDate(b[column]);
+            return direction === 'asc'
+              ? dateA.getTime() - dateB.getTime()
+              : dateB.getTime() - dateA.getTime();
+          }
+
+          // Handle numeric columns
+          if (typeof a[column] === 'number' && typeof b[column] === 'number') {
+            return direction === 'asc'
+              ? (a[column] as number) - (b[column] as number)
+              : (b[column] as number) - (a[column] as number);
+          }
+
+          // Handle string columns
+          const valueA = safeToString(a[column]);
+          const valueB = safeToString(b[column]);
+
+          if (direction === 'asc') {
+            return valueA.localeCompare(valueB);
+          } else {
+            return valueB.localeCompare(valueA);
+          }
+        }
+        return 0;
+      })
+  );
 };
 
 // Generate page numbers for pagination
@@ -149,7 +169,14 @@ export const generatePageNumbers = (
   return pageNumbers;
 };
 
-// Get unique values for filters
-export const getUniqueValues = (bookings: Booking[], field: keyof Booking) => {
+// Update the function to accept potentially undefined bookings
+export const getUniqueValues = (
+  bookings: Booking[] | undefined,
+  field: keyof Booking,
+) => {
+  // Return an empty array if bookings is undefined or null
+  if (!bookings) return [];
+
+  // Only run the map function if bookings exists
   return Array.from(new Set(bookings.map((booking) => booking[field])));
 };

@@ -13,8 +13,10 @@ import {
 import { LogOut, Menu, Settings, User } from 'lucide-react';
 import Image from 'next/image';
 import { RootState, useAppDispatch, useAppSelector } from '@/store';
-import { AuthState } from '@/store/authSlice';
+// Import AuthState from types file instead of slice
+import { AuthState } from '../../../types/auth.type';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 interface DashboardNavbarProps {
   onMobileMenuToggle?: () => void;
@@ -23,22 +25,36 @@ interface DashboardNavbarProps {
 export function DashboardNavbar({ onMobileMenuToggle }: DashboardNavbarProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { loading, error, isAuthenticated, user } = useAppSelector<RootState>(
-    (state) => state.auth,
-  ) as AuthState;
+  // Fixed type assertion issue
+  const { loading, error, isAuthenticated, user } = useAppSelector(
+    (state: RootState) => state.auth,
+  );
 
+  // Yang bikin error
   // If not authenticated, redirect to login page
+  // if (!isAuthenticated) {
+  //   router.push('/login');
+  //   return null;
+  // }
+
+  // Use useEffect for navigation instead of doing it during render
+  useEffect(() => {
+    if (!isAuthenticated && !loading) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, loading, router]);
+
+  // Show loading state or return null while checking authentication
   if (!isAuthenticated) {
-    router.push('/login');
-    return null;
+    return null; // Or return a loading spinner
   }
 
-  const initials = user?.name
-    ?.split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .substring(0, 2);
+  // const initials = user?.name
+  //   ?.split(' ')
+  //   .map((n) => n[0])
+  //   .join('')
+  //   .toUpperCase()
+  //   .substring(0, 2);
 
   return (
     <header className="fixed z-50 flex h-16 w-full items-center border-b bg-cyan-900 px-6 shadow-sm md:px-8">

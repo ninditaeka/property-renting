@@ -7,7 +7,8 @@ import {
   SinglePropertyResponse,
 } from '../../types/propertyList.type';
 
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const BASE_URL =
+  process.env.NEXT_PUBLIC_BASE_API_URL || 'http://localhost:8000';
 
 // Get all properties
 export const getAllProperties = async () => {
@@ -71,29 +72,6 @@ export const createProperty = async (propertyData: CreatePropertyRequest) => {
 };
 
 // Update property
-// export const updateProperty = async (
-//   propertyCode: string,
-//   propertyData: Partial<CreatePropertyRequest>,
-// ) => {
-//   try {
-//     const token = getAuthToken();
-//     const response = await axios.patch<SinglePropertyResponse>(
-//       `${BASE_URL}/property-lists/${propertyCode}`,
-//       propertyData,
-//       {
-//         headers: {
-//           'Content-Type': 'application/json',
-//           Authorization: `Bearer ${token}`,
-//         },
-//       },
-//     );
-//     return response.data;
-//   } catch (error) {
-//     console.error(`Error updating property with code ${propertyCode}:`, error);
-//     throw error;
-//   }
-// };
-// Update property
 export const updateProperty = async (
   propertyCode: string,
   propertyData: Partial<CreatePropertyRequest>,
@@ -109,9 +87,6 @@ export const updateProperty = async (
           return roomType;
         }
 
-        // If it's an existing room type but id is missing, try to find it
-        // This is assuming there's some way to identify which room types already exist
-        // You might need to adjust this logic based on how your data is structured
         return { ...roomType, id: null }; // Explicitly set id to null for new room types
       });
     }

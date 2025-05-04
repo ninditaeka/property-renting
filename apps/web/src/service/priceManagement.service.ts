@@ -5,7 +5,8 @@ import { getAuthToken } from '../../utils/auth.utils';
 import { ApiResponse } from '../../types/propertyCategory.type';
 import { PriceManagementData } from '../../types/priceManagement.type';
 import { RoomNumberData } from '../../types/priceManagement.type';
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const BASE_URL =
+  process.env.NEXT_PUBLIC_BASE_API_URL || 'http://localhost:8000';
 
 export const getPriceManagement = async (
   filters: {

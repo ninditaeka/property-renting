@@ -6,7 +6,8 @@ import { ApiResponse } from '../../types/propertyCategory.type';
 import { CreateRoomRequest } from '../../types/room.type';
 import { getAuthToken } from '../../utils/auth.utils';
 
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const BASE_URL =
+  process.env.NEXT_PUBLIC_BASE_API_URL || 'http://localhost:8000';
 
 export const createRoom = async (
   roomData: CreateRoomRequest,

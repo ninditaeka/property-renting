@@ -9,7 +9,8 @@ import {
 } from '../../types/tenant.type';
 
 // Define the BASE_URL
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const BASE_URL =
+  process.env.NEXT_PUBLIC_BASE_API_URL || 'http://localhost:8000';
 
 // API service functions
 export const getPropertyByUserToken = async (): Promise<Property[]> => {

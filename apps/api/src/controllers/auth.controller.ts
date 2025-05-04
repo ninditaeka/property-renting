@@ -228,7 +228,6 @@ export const customerRegister = async (req: Request, res: Response) => {
       phone,
       id_number,
       password,
-      photo,
     } = req.body;
 
     // Verify token
@@ -292,7 +291,6 @@ export const customerRegister = async (req: Request, res: Response) => {
         password: hashedPassword,
         is_verify: true,
         role: 'customer',
-        photo,
       },
     });
 
@@ -416,7 +414,6 @@ export const tenantRegister = async (req: Request, res: Response) => {
         password: hashedPassword,
         is_verify: true,
         role: 'tenant',
-        photo,
       },
     });
 
@@ -656,7 +653,6 @@ export const googleAuth = async (req: Request, res: Response) => {
           where: { id: user.id },
           data: {
             google_id: googleId,
-            photo: picture || user.photo,
             is_verify: true,
           },
         });
@@ -677,7 +673,7 @@ export const googleAuth = async (req: Request, res: Response) => {
           id: user.id,
           name: user.name,
           email: user.email,
-          photo: user.photo,
+
           role: user.role,
         },
       });
@@ -695,7 +691,7 @@ export const googleAuth = async (req: Request, res: Response) => {
           email,
           name,
           role: 'customer', // Default to customer for Google sign-ups
-          photo: picture || '',
+
           is_verify: true,
           password: hashedPassword,
           address: '',
@@ -720,7 +716,6 @@ export const googleAuth = async (req: Request, res: Response) => {
           id: newUser.id,
           name: newUser.name,
           email: newUser.email,
-          photo: newUser.photo,
           role: newUser.role,
         },
       });
@@ -871,7 +866,6 @@ export const linkGoogleAccount = async (req: Request, res: Response) => {
       where: { id: Number(userId) },
       data: {
         google_id: googleId,
-        photo: user.photo || picture || '',
       },
     });
 

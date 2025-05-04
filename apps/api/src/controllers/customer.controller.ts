@@ -33,7 +33,6 @@ export const getDataCustomerbyUserCode = async (
         id_number: true,
         email: true,
         role: true,
-        photo: true,
         createdAt: true,
         user_code: true,
         // Excluding password and other sensitive fields

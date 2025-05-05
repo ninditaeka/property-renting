@@ -1,8 +1,7 @@
 'use client';
 
-import type React from 'react';
 import { useEffect, useState } from 'react';
-import { authCustomerRegister, authVerifyToken } from '@/service/auth.service';
+import { authCustomerRegister } from '@/service/auth.service';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useForm } from 'react-hook-form';
@@ -22,24 +21,40 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
-import { registerCompleteCustomer } from '../../../../../../utils';
-
 import { useSearchParams } from 'next/navigation';
+
+// Define schema without email (email comes from token)
+const registerCompleteCustomer = z.object({
+  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
+  password: z
+    .string()
+    .min(6, { message: 'Password must be at least 6 characters' }),
+  date_birth: z.string().min(1, { message: 'Date of birth is required' }),
+  phone: z.string().min(5, { message: 'Valid phone number is required' }),
+  id_number: z.string().min(1, { message: 'KTP number is required' }),
+  address: z.string().min(1, { message: 'Address is required' }),
+  gender: z.enum(['male', 'female'], {
+    required_error: 'Please select your gender',
+  }),
+  role: z.literal('customer').optional(), // Optional as it's hardcoded in the submission
+});
 
 type RegisterInputs = z.infer<typeof registerCompleteCustomer>;
 
 export default function CompleteCustomerProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [tokenEmail, setTokenEmail] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [selectedFileName, setSelectedFileName] = useState<string>('');
 
-  // Initialize form with Zod resolver
+  // Get token from URL
+  const token = searchParams.get('token');
+
+  // Form initialization with Zod resolver
   const formCustomer = useForm<RegisterInputs>({
     resolver: zodResolver(registerCompleteCustomer),
     defaultValues: {
-      email: '',
       name: '',
       password: '',
       date_birth: '',
@@ -47,24 +62,46 @@ export default function CompleteCustomerProfilePage() {
       id_number: '',
       address: '',
       gender: undefined,
-      // photo: undefined,
+      role: 'customer',
     },
   });
 
+  // Check for token on component mount
+  useEffect(() => {
+    if (!token) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Token',
+        description:
+          'Verification token is missing. Please use the link sent to your email.',
+      });
+      router.push('/login');
+    }
+  }, [token, toast, router]);
+
   const onSubmit = async (data: RegisterInputs) => {
+    if (!token) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Token',
+        description: 'Verification token is missing',
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
+      // Use the existing authCustomerRegister function
+      // The token is automatically extracted from the URL by the function
       await authCustomerRegister({
-        email: data.email,
         name: data.name,
         password: data.password,
         date_birth: data.date_birth,
         phone: data.phone,
         id_number: data.id_number,
         gender: data.gender,
-        role: 'customer',
         address: data.address,
-        // photo: data.photo,
+        role: 'customer', // Explicitly set role
       });
 
       toast({
@@ -72,7 +109,7 @@ export default function CompleteCustomerProfilePage() {
         variant: 'default',
       });
 
-      // Optional: Redirect after successful registration
+      // Redirect after successful registration
       router.push('/login');
     } catch (error) {
       toast({
@@ -107,6 +144,14 @@ export default function CompleteCustomerProfilePage() {
             hospitality! Complete your registration by providing a few
             additional details.
           </p>
+
+          {tokenEmail && (
+            <div className="mt-2 p-2 bg-blue-50 rounded-md w-full text-center">
+              <p className="text-sm text-blue-600">
+                Registering with email: <strong>{tokenEmail}</strong>
+              </p>
+            </div>
+          )}
         </div>
 
         <Form {...formCustomer}>
@@ -122,24 +167,6 @@ export default function CompleteCustomerProfilePage() {
                   <FormLabel>Name</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter your full name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={formCustomer.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="Enter your email"
-                      {...field}
-                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -223,38 +250,6 @@ export default function CompleteCustomerProfilePage() {
                 </FormItem>
               )}
             />
-
-            {/* <FormField
-              control={formCustomer.control}
-              name="photo"
-              render={({ field: { onChange, value, ...field } }) => (
-                <FormItem>
-                  <FormLabel>Profile Photo</FormLabel>
-                  <FormControl>
-                    <div className="relative flex items-center">
-                      <Input
-                        type="file"
-                        accept=".jpg,.jpeg,.png,.gif"
-                        {...field}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            onChange(file);
-                            setSelectedFileName(file.name);
-                          }
-                        }}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                        id="photo"
-                      />
-                      <div className="w-full border p-2 rounded text-gray-500">
-                        {selectedFileName || 'Choose a file  by click here'}
-                      </div>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            /> */}
 
             <FormField
               control={formCustomer.control}

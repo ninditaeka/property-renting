@@ -219,16 +219,8 @@ export const customerRegister = async (req: Request, res: Response) => {
     const token = req.query.token as string;
     console.log('a1', 'token:', token);
 
-    const {
-      email,
-      name,
-      date_birth,
-      address,
-      gender,
-      phone,
-      id_number,
-      password,
-    } = req.body;
+    const { name, date_birth, address, gender, phone, id_number, password } =
+      req.body;
 
     // Verify token
     if (!token) {
@@ -240,10 +232,23 @@ export const customerRegister = async (req: Request, res: Response) => {
 
     // Decode and validate token
     let decoded;
-    console.log('a3', 'token:', token, 'decoded:', decoded);
 
     try {
       decoded = validateVerificationToken(token);
+      console.log('a3', 'token:', token, 'decoded:', decoded);
+      console.log('cek decoded value customer:', decoded);
+
+      // Get email from decoded token
+      const email = decoded.email;
+      console.log('Email from decoded token:', email);
+
+      // Ensure token sets role as customer
+      if (decoded.role !== 'customer') {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Invalid registration token: not a customer token',
+        });
+      }
     } catch (tokenError) {
       return res.status(400).json({
         status: 'error',
@@ -251,13 +256,8 @@ export const customerRegister = async (req: Request, res: Response) => {
       });
     }
 
-    // Ensure token matches email and sets role as customer
-    if (decoded.email !== email || decoded.role !== 'customer') {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Invalid registration token',
-      });
-    }
+    // Use email from the token
+    const email = decoded.email;
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -278,10 +278,10 @@ export const customerRegister = async (req: Request, res: Response) => {
       Number(process.env.PASSWORD_SALT || 10),
     );
 
-    // Create user
+    // Create user with email from token
     const newUser = await prisma.user.create({
       data: {
-        email,
+        email, // This is now using the email from the decoded token
         name,
         date_birth: date_birth ? new Date(date_birth) : undefined,
         address,
@@ -330,7 +330,6 @@ export const tenantRegister = async (req: Request, res: Response) => {
   const token = req.query.token as string;
   try {
     const {
-      email,
       name,
       date_birth,
       address,
@@ -366,15 +365,19 @@ export const tenantRegister = async (req: Request, res: Response) => {
       });
     }
 
-    if (decoded.email !== email || decoded.role !== 'tenant') {
+    console.log('cek decoded value tenant:', decoded);
+
+    // Get email from decoded token
+    const email = decoded.email;
+    console.log('Email from decoded token:', email);
+
+    if (decoded.role !== 'tenant') {
       console.log(
         'abcde',
         'decoded.email:',
         decoded.email,
         'decoded.role:',
         decoded.role,
-        'email:',
-        email,
       );
       return res.status(400).json({
         status: 'error',
@@ -404,7 +407,7 @@ export const tenantRegister = async (req: Request, res: Response) => {
     // Create user
     const newUser = await prisma.user.create({
       data: {
-        email,
+        email, // Using email from decoded token
         name,
         date_birth: date_birth ? new Date(date_birth) : undefined,
         address,

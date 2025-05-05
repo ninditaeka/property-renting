@@ -133,7 +133,6 @@ export async function authCustomerRegister(data: RegistrationCustomer) {
   }
 
   const {
-    email,
     name,
     date_birth,
     role,
@@ -149,7 +148,6 @@ export async function authCustomerRegister(data: RegistrationCustomer) {
     const response = await axios.post(
       `${BASE_URL}/auth/register/customer`,
       {
-        email,
         name,
         date_birth,
         role,
@@ -200,10 +198,8 @@ export async function authTenantRegister(data: RegistrationTenant) {
   }
 
   const {
-    email,
     name,
     date_birth,
-    role,
     address,
     gender,
     phone,
@@ -219,10 +215,8 @@ export async function authTenantRegister(data: RegistrationTenant) {
     const response = await axios.post(
       `${BASE_URL}/auth/register/tenant`,
       {
-        email,
         name,
         date_birth,
-        role,
         address,
         gender,
         phone,
@@ -256,7 +250,6 @@ export async function authTenantRegister(data: RegistrationTenant) {
     }
   }
 }
-
 export async function authVerifyToken(data: {
   email: string;
   role: string;

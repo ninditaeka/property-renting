@@ -1,9 +1,10 @@
 'use client';
 
 import type React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { authTenantRegister } from '@/service/auth.service';
 import { useForm } from 'react-hook-form';
@@ -20,10 +21,26 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
-import { registerCompleteTenant } from '../../../../../../utils';
+
+// Update Zod schema to remove email field
+const registerCompleteTenant = z.object({
+  name: z.string().min(1, { message: 'Name is required' }),
+  password: z
+    .string()
+    .min(6, { message: 'Password must be at least 6 characters' }),
+  date_birth: z.string().min(1, { message: 'Date of birth is required' }),
+  phone: z.string().min(1, { message: 'Phone number is required' }),
+  id_number: z.string().min(1, { message: 'KTP number is required' }),
+  address: z.string().min(1, { message: 'Address is required' }),
+  gender: z.enum(['male', 'female'], {
+    required_error: 'Please select your gender',
+  }),
+  bank_account: z.string().min(1, { message: 'Bank account is required' }),
+  bank_name: z.string().min(1, { message: 'Bank name is required' }),
+  npwp: z.string().min(1, { message: 'NPWP is required' }),
+});
 
 type RegisterInputs = z.infer<typeof registerCompleteTenant>;
 
@@ -31,12 +48,27 @@ export default function CompleteTenantProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
-  const [selectedFileName, setSelectedFileName] = useState<string>('');
+  // We don't need to extract the token here anymore as the service will handle it
+  // But we'll still check if the token exists in the URL for early validation
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
+
+  // Redirect if no token is provided
+  useEffect(() => {
+    if (!token) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Token',
+        description:
+          'No verification token provided. Please check your email link.',
+      });
+      router.push('/login');
+    }
+  }, [token, toast, router]);
 
   const formTenant = useForm<RegisterInputs>({
     resolver: zodResolver(registerCompleteTenant),
     defaultValues: {
-      email: '',
       name: '',
       password: '',
       date_birth: '',
@@ -44,7 +76,6 @@ export default function CompleteTenantProfilePage() {
       id_number: '',
       address: '',
       gender: undefined,
-      // photo: undefined,
       bank_account: '',
       bank_name: '',
       npwp: '',
@@ -54,17 +85,15 @@ export default function CompleteTenantProfilePage() {
   const onSubmit = async (data: RegisterInputs) => {
     setIsLoading(true);
     try {
+      // The service will extract the token from the URL
       await authTenantRegister({
-        email: data.email,
         name: data.name,
         password: data.password,
         date_birth: data.date_birth,
         phone: data.phone,
         id_number: data.id_number,
         gender: data.gender,
-        role: 'tenant',
         address: data.address,
-        // photo: data.photo,
         bank_account: data.bank_account,
         bank_name: data.bank_name,
         npwp: data.npwp,
@@ -92,7 +121,7 @@ export default function CompleteTenantProfilePage() {
 
   return (
     <div className="min-h-screen w-full">
-      <div className="flex items-center justify-center min-h-screen p-4  bg-gradient-to-b from-sky-300 to-amber-100">
+      <div className="flex items-center justify-center min-h-screen p-4 bg-gradient-to-b from-sky-300 to-amber-100">
         <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6 mx-auto my-8">
           <div className="flex flex-col items-center mb-6">
             <Link href="/" className="flex justify-center">
@@ -134,23 +163,6 @@ export default function CompleteTenantProfilePage() {
                 )}
               />
 
-              <FormField
-                control={formTenant.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="Enter your email"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               <FormField
                 control={formTenant.control}
                 name="password"
@@ -243,38 +255,6 @@ export default function CompleteTenantProfilePage() {
                 )}
               />
 
-              {/* <FormField
-                control={formTenant.control}
-                name="photo"
-                render={({ field: { onChange, value, ...field } }) => (
-                  <FormItem>
-                    <FormLabel>Profile Photo</FormLabel>
-                    <FormControl>
-                      <div className="relative flex items-center">
-                        <Input
-                          type="file"
-                          accept=".jpg,.jpeg,.png,.gif"
-                          {...field}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              onChange(file);
-                              setSelectedFileName(file.name);
-                            }
-                          }}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                          id="photo"
-                        />
-                        <div className="w-full border p-2 rounded text-gray-500">
-                          {selectedFileName || 'Choose a file by clicking here'}
-                        </div>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              /> */}
-
               <FormField
                 control={formTenant.control}
                 name="gender"
@@ -363,7 +343,7 @@ export default function CompleteTenantProfilePage() {
 
               <Button
                 type="submit"
-                className="w-full mt-6  bg-sky-400 hover:bg-sky-500"
+                className="w-full mt-6 bg-sky-400 hover:bg-sky-500"
                 disabled={isLoading}
               >
                 {isLoading ? 'Registering...' : 'Complete Registration'}
@@ -372,43 +352,6 @@ export default function CompleteTenantProfilePage() {
           </Form>
         </div>
       </div>
-
-      {/* Desktop version - similar structure but with md:flex */}
-      {/* <div className="hidden md:flex md:flex-col md:items-center md:justify-center md:min-h-screen bg-white">
-        <div className="w-full max-w-md p-6 border border-sky-200 rounded-lg">
-          <div className="flex flex-col items-center mb-6">
-            <Link href="/" className="flex justify-center">
-              <Image
-                src="/logo_no_bg_no_yel.png"
-                alt="Logo"
-                width={200}
-                height={40}
-                className="h-10 w-auto"
-              />
-            </Link>
-            <p className="mt-4 text-sm text-gray-600 text-left">
-              You're just one step away from listing your property and
-              connecting with potential renters! Complete your registration by
-              providing a few additional details.
-            </p>
-          </div>
-
-          <Form {...formTenant}>
-            <form
-              onSubmit={formTenant.handleSubmit(onSubmit)}
-              className="space-y-4"
-            >
-              <Button
-                type="submit"
-                className="w-full mt-6"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Registering...' : 'Complete Registration'}
-              </Button>
-            </form>
-          </Form>
-        </div>
-      </div> */}
     </div>
   );
 }
